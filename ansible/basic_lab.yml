@@ -1,0 +1,76 @@
+---
+- hosts: 
+  - lab
+  become: true
+  remote_user: ragnar-b
+  become_method: sudo
+  tasks:
+    - name: replace line
+      replace: 
+        path: /etc/dhcpcd.conf
+        regexp: '^(.*)static domain_name_servers(.*)$' 
+        replace: 'static domain_name_servers=192.168.1.15'
+        backup: yes
+
+    - name: Update apt
+      apt: update_cache=yes cache_valid_time=3600
+
+    - name: Upgrade all packages on servers
+      apt: upgrade=dist
+
+    - name: install apps
+      apt:
+        name:
+        - neofetch
+        - git
+        - unattended-upgrades
+        - fail2ban
+        - python3
+        - python3-pip
+        - apt-transport-https
+        - ca-certificates
+        - curl
+        - software-properties-common
+        - virtualenv
+        - python3-setuptools
+        - python3-venv
+        - tree
+        - nfs-common
+        state: present
+
+    - name: install pip packages
+      pip:
+        name:
+        - docker-compose
+        - docker
+
+    - name: Mount NFS volume
+      ansible.posix.mount:
+        src: 192.168.1.29:/volume1/docker
+        path: /mnt/docker
+        opts: auto,nofail,noatime,nolock,intr,tcp,actimeo=1800
+        state: mounted
+        fstype: nfs
+
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu bionic stable
+        state: present
+
+    - name: install docker-ce
+      apt: 
+        update_cache: yes
+        name:
+        - docker-ce
+        state: present
+  
+    - name: Ensure docker users are added to the docker group.
+      user:
+        name: ragnar-b
+        groups: docker
+        append: true

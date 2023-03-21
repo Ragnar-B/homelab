@@ -1,0 +1,22 @@
+version: "3.8"
+services:
+  Uptime-Kuma:
+#    container_name: uptime-kuma
+    image: louislam/uptime-kuma:1
+#    restart: always
+    volumes:
+      - uptime-kuma:/app/data
+    ports:
+      - "3001:3001"
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints: [node.role == manager]
+        	  
+volumes:
+  uptime-kuma:
+    driver_opts:
+      type: "nfs4"
+      o: "addr=192.168.1.29,rw,noatime,rsize=8192,wsize=8192,tcp,timeo=14,nolock"
+      device: ":/volume1/docker/uptime-kuma"

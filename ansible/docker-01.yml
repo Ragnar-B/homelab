@@ -1,0 +1,31 @@
+---
+- hosts:
+  - docker-01.home.lab
+  become: true
+  remote_user: ragnar-b
+  become_method: sudo
+  tasks:
+    - name: Pihole
+      community.docker.docker_compose:
+        files: pihole-unbound.yml
+        project_src: /home/ragnar-b/docker-compose/pihole/
+        build: no
+      register: output
+    - name: Uptime-Kuma
+      community.docker.docker_compose:
+        files: uptime-kuma.yml
+        project_src: /home/ragnar-b/docker-compose/uptime-kuma/
+        state: absent
+      register: output
+    - name: Unifi
+      community.docker.docker_compose:
+        files: unifi.yml
+        project_src: /home/ragnar-b/docker-compose/unifi/
+        build: no
+      register: output
+    - name: Homer
+      community.docker.docker_compose:
+        files: homer.yml
+        project_src: /home/ragnar-b/docker-compose/homer/
+        build: no
+      register: output

@@ -1,0 +1,66 @@
+version: "3.8"
+networks:
+  Pihole_Network:
+    driver: macvlan
+    driver_opts:
+        parent: enp3s0
+    ipam:
+        config:
+        - subnet: 192.168.1.0/24
+          gateway: 192.168.1.1
+          ip_range: 192.168.1.0/24
+
+services:
+  pihole:
+    container_name: pihole
+    hostname: pihole
+    image: pihole/pihole:latest
+    networks:
+      Pihole_Network:
+        ipv4_address: 192.168.1.15
+    environment:
+    - ServerIP:192.168.1.15
+    - TZ=Europe/Amsterdam
+    # Set a password in WEBPASSWORD or it will be randomly generated.
+    # - WEBPASSWORD=
+    - DNS1=192.168.1.16#5053
+    - DNS2=no
+    volumes:
+    - /home/ragnar-b/docker/pihole/etc-pihole/:/etc/pihole/
+    - /home/ragnar-b/docker/pihole/etc-dnsmasq.d/:/etc/dnsmasq.d/
+    cap_add:
+    - NET_ADMIN
+    restart: unless-stopped
+
+  unbound:
+    container_name: unbound
+    hostname: unbound
+    image: mvance/unbound:latest
+    networks:
+      Pihole_Network:
+        ipv4_address: 192.168.1.16
+    environment:
+    - TZ=Europe/Amsterdam
+    - PGID=1000
+    - PUID=1000
+    volumes:
+    - /home/ragnar-b/unbound:/opt/unbound/etc/unbound/
+    restart: unless-stopped
+
+  watchtower:
+    container_name: watchtower
+    hostname: watchtower
+    image: containrrr/watchtower
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_INCLUDE_RESTARTING=true
+      - WATCHTOWER_INCLUDE_STOPPED=true
+      - WATCHTOWER_REVIVE_STOPPED=false
+      - WATCHTOWER_SCHEDULE=0 0 5 * * ?
+      - TZ=Europe/Amsterdam
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: unless-stopped
+    dns:
+      - 192.168.1.15
+      - 1.1.1.1
